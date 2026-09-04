@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  PARENT
+  ADMIN
+}
+model User {
+  id Int @id @default(autoincrement())
+  name String
+  email String 
+  schoolName String?
+  password String
+  role Role @default(STUDENT)
+  schoolId Int?
+  refreshToken String @default("")
+  created DateTime @default(now())
+  isVerified Boolean @default(false)
+  @@unique([email, schoolId])
+}
+model Otp {
+  id String @id @default(uuid())
+  email String
+  schoolId Int @default(autoincrement())
+  hasdedCode String
+  expiresAt  DateTime
+  created DateTime @default(now())
+  @@unique([email, schoolId])
+
+}
+
+
+
+

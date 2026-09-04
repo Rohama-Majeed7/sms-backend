@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/afad1a04-07a2-474b-b4fa-9603d12a1130/resourceGroups/Sms-RG/providers/Microsoft.Web/sites/sms",
+    "appService.deploySubpath": "."
+}
