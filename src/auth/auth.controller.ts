@@ -45,9 +45,7 @@ export class AuthController {
       dto.name,
       dto.email,
       dto.password,
-      dto.role as Role,
-      dto.schoolId,
-      dto.schoolName
+      dto.role as Role
     );
   }
 
@@ -73,7 +71,7 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.loginUser(dto.email, dto.password, dto.schoolId, res);
+    return this.authService.loginUser(dto.email, dto.password, res);
   }
 
   @Post('logout')
@@ -91,11 +89,11 @@ export class AuthController {
   })
 
   async logoutUser(
-    @Body() body: { email: string; schoolId?: number },
+    @Body() body: { email: string },
     @Res({ passthrough: true }) res: Response,
   ) {
 
-    return this.authService.logoutUser(body.email, body.schoolId, res);
+    return this.authService.logoutUser(body.email, res);
   }
   @ApiExcludeEndpoint()
   @Post('refresh-token')
@@ -124,7 +122,7 @@ export class AuthController {
     description: 'User not found or not verified.',
   })
   async sendOtp(@Body() dto: SendOTPDto) {
-    return this.authService.sendOtp(dto.email, dto.schoolId);
+    return this.authService.sendOtp(dto.email);
   }
   @Post('verify-otp')
   @ApiOperation({
@@ -144,7 +142,7 @@ export class AuthController {
     description: 'Invalid or expired OTP.',
   })
   async verifyOtp(@Body() dto: VerifyOTPDto) {
-    return this.authService.verifyOtp(dto.email, dto.otp, dto.schoolId);
+    return this.authService.verifyOtp(dto.email, dto.otp);
   }
   @Post('reset-password')
   @ApiOperation({
@@ -164,6 +162,6 @@ export class AuthController {
     description: 'User not found or not verified.',
   })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto.email, dto.newPassword, dto.schoolId);
+    return this.authService.resetPassword(dto.email, dto.newPassword);
   }
 }

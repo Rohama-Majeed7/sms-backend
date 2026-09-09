@@ -43,28 +43,10 @@ export class AuthService {
     email: string,
     password: string,
     role: Role,
-    schoolId: number | undefined,
-    schoolName?: string,
   ) {
-    let existingUser: any;
-
-    if (role === Role.STUDENT || role === Role.TEACHER) {
-      if (schoolId === undefined) {
-        throw new UnauthorizedException('schoolId is required for STUDENT and TEACHER roles');
-      }
-      existingUser = await this.prisma.user.findUnique({
-        where: {
-          email_schoolId: {
-            email,
-            schoolId, // now narrowed to `number` ✓
-          },
-        },
-      });
-    } else {
-      existingUser = await this.prisma.user.findFirst({
-        where: { email },
-      });
-    }
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
     if (existingUser) {
       throw new UnauthorizedException(
@@ -74,103 +56,33 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let newUser: any;
+    const newUser = await this.prisma.user.create({
+      data: {
+        name,
+        email,
+        role,
+        password: hashedPassword,
+        isVerified: false,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isVerified: true,
+      },
+    });
 
-    if (role === Role.STUDENT || role === Role.TEACHER) {
-      if (schoolId === undefined) {
-        throw new UnauthorizedException('schoolId is required for STUDENT and TEACHER roles');
-      }
-      newUser = await this.prisma.user.create({
-        data: {
-          name,
-          email,
-          role,
-          schoolId,
-          password: hashedPassword,
-          isVerified: false,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          schoolId: true,
-          isVerified: true,
-        },
-      });
-    } else {
-      newUser = await this.prisma.user.create({
-        data: {
-          name,
-          email,
-          role: Role.ADMIN,
-          schoolName,
-          password: hashedPassword,
-          isVerified: false,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          schoolName: true,
-          isVerified: true,
-        },
-      });
-    }
-
-    if (role === Role.STUDENT || role === Role.TEACHER) {
-      return {
-        message: 'User registered successfully',
-        status: true,
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          schoolId: newUser.schoolId,
-          isVerified: newUser.isVerified,
-        },
-      };
-    } else {
-      return {
-        message: 'User registered successfully',
-        status: true,
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
-          schoolName: newUser.schoolName,
-          isVerified: newUser.isVerified,
-        },
-      };
-    }
+    return {
+      message: 'User registered successfully',
+      status: true,
+      user: newUser,
+    };
   }
-  async loginUser(email: string, password: string, schoolId: number | undefined, res: Response) {
-    let user;
-    if (schoolId) {
-      user = await this.prisma.user.findUnique({
-        where: {
-          email_schoolId: {
-            email,
-            schoolId,
-          },
-        },
-      });
-    } else {
-      user = await this.prisma.user.findFirst({
-        where: {
-          email,
-          role: Role.ADMIN
-        }
-      })
-    }
-    if (schoolId && !user) {
-      throw new UnauthorizedException('User not found in this school');
-    }
+  async loginUser(email: string, password: string, res: Response) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new UnauthorizedException('Admin not found');
+      throw new UnauthorizedException('User not found');
     }
     if (!user.isVerified) {
       throw new UnauthorizedException('User is not verified');
@@ -199,62 +111,25 @@ export class AuthService {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    if (user.role === "STUDENT" || user.role === "TEACHER") {
-      return {
-        message: 'Login successful',
-        status: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          schoolId: user.schoolId,
-          isVerified: user.isVerified,
-        },
-        accessToken: accessToken,
-      };
-    } else {
-      return {
-        message: 'Login successful',
-        status: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          schoolName: user.schoolName,
-          isVerified: user.isVerified,
-        },
-        accessToken: accessToken,
-      };
-    }
+    return {
+      message: 'Login successful',
+      status: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+      accessToken,
+    };
   }
 
-  async logoutUser(email: string, schoolId: number | undefined, res: Response) {
-    let user;
-    if (schoolId) {
-      user = await this.prisma.user.update({
-        where: {
-          email_schoolId: {
-            email,
-            schoolId,
-          }
-        },
-        data: { refreshToken: '' },
-      });
-    } else {
-      const found = await this.prisma.user.findFirst({
-        where: { email, role: Role.ADMIN },
-      });
-      if (!found) throw new UnauthorizedException('Admin not found');
-      user = await this.prisma.user.update({
-        where: { id: found.id },
-        data: { refreshToken: '' },
-      });
-    }
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+  async logoutUser(email: string, res: Response) {
+    await this.prisma.user.update({
+      where: { email },
+      data: { refreshToken: '' },
+    });
     res.clearCookie('refreshToken');
     return { message: 'Logout successful', status: true };
   }
@@ -307,32 +182,18 @@ export class AuthService {
       },
     };
   }
-  async sendOtp(email: string, schoolId: number | undefined) {
+  async sendOtp(email: string) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    let userExists;
-    if (schoolId) {
-      userExists = await this.prisma.user.findUnique({
-        where: {
-          email_schoolId: { email, schoolId },
-        },
-      });
-      if (!userExists) throw new UnauthorizedException('User not found in this school');
-    } else {
-      userExists = await this.prisma.user.findFirst({
-        where: { email, role: Role.ADMIN },
-      });
-      if (!userExists) throw new UnauthorizedException('Admin not found');
-      schoolId = 0; // sentinel value for admin OTP records
-    }
+    const userExists = await this.prisma.user.findUnique({ where: { email } });
+    if (!userExists) throw new UnauthorizedException('User not found');
     await this.sendOtpCode(email, otp);
     const hashedOtp = await bcrypt.hash(otp, 10);
     await this.prisma.otp.upsert({
       where: {
-        email_schoolId: { email, schoolId },
+        email,
       },
       create: {
         email,
-        schoolId,
         hasdedCode: hashedOtp,
         expiresAt: new Date(Date.now() + 2 * 60 * 1000),
       },
@@ -343,12 +204,9 @@ export class AuthService {
     })
     return { message: 'OTP sent successfully', status: true };
   }
-  async verifyOtp(email: string, otp: string, schoolId: number | undefined) {
-    const resolvedSchoolId = schoolId ?? 0;
+  async verifyOtp(email: string, otp: string) {
     const otpRecord = await this.prisma.otp.findUnique({
-      where: {
-        email_schoolId: { email, schoolId: resolvedSchoolId },
-      },
+      where: { email },
     });
     if (!otpRecord) {
       throw new UnauthorizedException('No OTP found for this email');
@@ -361,50 +219,23 @@ export class AuthService {
     if (otpRecord.expiresAt < new Date()) {
       throw new UnauthorizedException('OTP has expired');
     }
-    if (schoolId) {
-      await this.prisma.user.update({
-        where: {
-          email_schoolId: { email, schoolId },
-        },
-        data: { isVerified: true },
-      });
-    } else {
-      const admin = await this.prisma.user.findFirst({
-        where: { email, role: Role.ADMIN },
-      });
-      if (admin) {
-        await this.prisma.user.update({
-          where: { id: admin.id },
-          data: { isVerified: true },
-        });
-      }
-    }
+    await this.prisma.user.update({
+      where: { email },
+      data: { isVerified: true },
+    });
     await this.prisma.otp.deleteMany({
       where: { email },
     });
     return { message: 'OTP verified successfully', status: true };
   }
-  async resetPassword(email: string, newPassword: string, schoolId: number | undefined) {
+  async resetPassword(email: string, newPassword: string) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    if (schoolId) {
-      const user = await this.prisma.user.findUnique({
-        where: { email_schoolId: { email, schoolId } },
-      });
-      if (!user) throw new UnauthorizedException('User not found');
-      await this.prisma.user.update({
-        where: { email_schoolId: { email, schoolId } },
-        data: { password: hashedPassword },
-      });
-    } else {
-      const admin = await this.prisma.user.findFirst({
-        where: { email, role: Role.ADMIN },
-      });
-      if (!admin) throw new UnauthorizedException('Admin not found');
-      await this.prisma.user.update({
-        where: { id: admin.id },
-        data: { password: hashedPassword },
-      });
-    }
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new UnauthorizedException('User not found');
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
     return { message: 'Password reset successfully', status: true };
   }
 }

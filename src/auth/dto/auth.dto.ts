@@ -15,12 +15,6 @@ export class LoginDto {
     })
     @IsString()
     password!: string;
-    @ApiProperty({
-        example: 1,
-    })
-    @IsOptional()
-    @IsNumber()
-    schoolId!: number;
 }
 
 export class SignupDto {
@@ -45,19 +39,6 @@ export class SignupDto {
     @IsString()
     role!: string;
     @ApiProperty({
-        example: 'A brief bio about the user.',
-        required: false,
-    })
-    @IsOptional()
-    @IsNumber()
-    schoolId?: number
-    @ApiProperty({
-        example: "Add schoolId of school"
-    })
-    @IsOptional()
-    @IsString()
-    schoolName?: string;
-    @ApiProperty({
         example: 'JavaScript, TypeScript, Node.js',
     })
 
@@ -74,13 +55,6 @@ export class SendOTPDto {
     })
     @IsEmail()
     email!: string;
-    @ApiProperty({
-        example: 1,
-        required: false,
-    })
-    @IsOptional()
-    @IsNumber()
-    schoolId?: number;
 }
 export class VerifyOTPDto {
     @ApiProperty({
@@ -94,13 +68,6 @@ export class VerifyOTPDto {
     })
     @IsString()
     otp!: string;
-    @ApiProperty({
-        example: 1,
-        required: false,
-    })
-    @IsOptional()
-    @IsNumber()
-    schoolId?: number;
 }
 
 export class ResetPasswordDto {
@@ -114,12 +81,4 @@ export class ResetPasswordDto {
     })
     @IsString()
     newPassword!: string;
-    @ApiProperty({
-        example: 1,
-        required: false,
-    })
-    @IsOptional()
-    @IsNumber()
-    schoolId?: number;
-
 }

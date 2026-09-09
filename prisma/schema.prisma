@@ -17,28 +17,68 @@ enum Role {
   PARENT
   ADMIN
 }
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model User {
   id Int @id @default(autoincrement())
   name String
-  email String 
-  schoolName String?
+  email  String @unique
   password String
   role Role @default(STUDENT)
-  schoolId Int?
   refreshToken String @default("")
   created DateTime @default(now())
   isVerified Boolean @default(false)
-  @@unique([email, schoolId])
+  student Student?
+  teacher Teacher?
 }
+model Student {
+  id              String    @id @default(cuid())
+
+  userId          Int       @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dateOfBirth     DateTime?
+  gender          Gender?
+
+  address         String?
+
+  guardianName    String?
+  guardianPhone   String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("students")
+}
+model Teacher {
+  id              String    @id @default(cuid())
+
+  userId          Int       @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  employeeNumber  String?
+  qualification   String?
+  specialization  String?
+
+  joiningDate     DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("teachers")
+}
+
 model Otp {
   id String @id @default(uuid())
-  email String
-  schoolId Int @default(autoincrement())
+  email String @unique
   hasdedCode String
   expiresAt  DateTime
   created DateTime @default(now())
-  @@unique([email, schoolId])
-
 }
 
 

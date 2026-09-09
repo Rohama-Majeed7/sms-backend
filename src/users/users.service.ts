@@ -10,7 +10,6 @@ export class UsersService {
         name: true,
         email: true,
         role: true,
-        schoolName: true,
         created: true,
       },
     });
