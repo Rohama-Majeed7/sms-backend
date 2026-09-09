@@ -43,6 +43,7 @@ export class AuthService {
     email: string,
     password: string,
     role: Role,
+    
   ) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
