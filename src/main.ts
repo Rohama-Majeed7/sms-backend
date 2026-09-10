@@ -19,11 +19,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   app.enableCors({
-    origin: [
-      'https://sms-user-portal.vercel.app',
-      'http://localhost:5173',
-      'https://sms-admin-portal-sckc.vercel.app',
-    ],
+    origin: [process.env.sms_user_portal_url, process.env.sms_admin_portal_url],
     credentials: true,
   });
 
