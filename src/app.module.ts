@@ -5,6 +5,8 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
   imports: [
     UsersModule,
@@ -19,8 +21,11 @@ import { MailerModule } from '@nestjs-modules/mailer';
         },
       },
     }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
