@@ -5,10 +5,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    const databaseUrl =
-      process.env.DATABASE_URL ||
-      'postgresql://postgres:Admin@123@localhost:5432/auth_db?schema=public';
-
+    const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
       throw new Error(
         'DATABASE_URL is not defined. Prisma requires a database URL.',

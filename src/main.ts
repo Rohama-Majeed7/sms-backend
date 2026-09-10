@@ -21,6 +21,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'https://sms-user-portal.vercel.app',
+      'http://localhost:5173',
       'https://sms-admin-portal-sckc.vercel.app',
     ],
     credentials: true,
