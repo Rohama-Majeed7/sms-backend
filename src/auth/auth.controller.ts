@@ -5,7 +5,13 @@ import { Controller, Post, Body, Res, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Role } from '@prisma/client';
 import type { Response, Request } from 'express';
-import { LoginDto, SignupDto, SendOTPDto, VerifyOTPDto, ResetPasswordDto } from './dto/auth.dto';
+import {
+  LoginDto,
+  SignupDto,
+  SendOTPDto,
+  VerifyOTPDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -13,15 +19,16 @@ import {
   ApiOkResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
-  ApiExcludeEndpoint
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/guards/guards';
-
 
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('signup')
   @ApiOperation({
@@ -39,13 +46,13 @@ export class AuthController {
   })
   async registerUser(
     @Body()
-    dto: SignupDto
+    dto: SignupDto,
   ) {
     return this.authService.registerUser(
       dto.name,
       dto.email,
       dto.password,
-      dto.role as Role
+      dto.role as Role,
     );
   }
 
@@ -66,17 +73,20 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Invalid email or password.',
   })
-
   async loginUser(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.loginUser(dto.email, dto.password, res);
+    return this.authService.loginUser(
+      dto.email,
+      dto.password,
+      dto.portal,
+      res,
+    );
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-
   @ApiOperation({
     summary: 'Logout User',
     description: 'Logout the authenticated user and clear the refresh token.',
@@ -87,12 +97,10 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'User not authenticated.',
   })
-
   async logoutUser(
     @Body() body: { email: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-
     return this.authService.logoutUser(body.email, res);
   }
   @ApiExcludeEndpoint()
@@ -107,7 +115,8 @@ export class AuthController {
   @Post('send-otp')
   @ApiOperation({
     summary: 'Send OTP',
-    description: 'Send a One-Time Password (OTP) to the user\'s email for verification.',
+    description:
+      "Send a One-Time Password (OTP) to the user's email for verification.",
   })
   @ApiBody({
     type: SendOTPDto,
@@ -127,7 +136,7 @@ export class AuthController {
   @Post('verify-otp')
   @ApiOperation({
     summary: 'Verify OTP',
-    description: 'Verify the One-Time Password (OTP) sent to the user\'s email.',
+    description: "Verify the One-Time Password (OTP) sent to the user's email.",
   })
   @ApiBody({
     type: VerifyOTPDto,
@@ -147,7 +156,8 @@ export class AuthController {
   @Post('reset-password')
   @ApiOperation({
     summary: 'Reset Password',
-    description: 'Reset the user\'s password using their email and a new password.',
+    description:
+      "Reset the user's password using their email and a new password.",
   })
   @ApiBody({
     type: ResetPasswordDto,

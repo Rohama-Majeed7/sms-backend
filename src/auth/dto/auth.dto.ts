@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { IsString, IsEmail, IsBoolean, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsBoolean, } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -15,6 +15,8 @@ export class LoginDto {
     })
     @IsString()
     password!: string;
+    @IsString()
+    portal!: string;
 }
 
 export class SignupDto {

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -14,7 +13,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailerService,
-  ) { }
+  ) {}
 
   private async sendOtpCode(email: string, otp: string) {
     await this.mailService.sendMail({
@@ -24,15 +23,15 @@ export class AuthService {
     });
   }
 
-  private getAccessToken(user: { id: number; email: string }) {
-    const payload = { sub: user.id, email: user.email };
+  private getAccessToken(user: { id: number; email: string; role: Role }) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
     return this.jwtService.sign(payload, {
       expiresIn: '15m',
       secret: 'access_token_secret',
     });
   }
-  private getRefreshToken(user: { id: number; email: string }) {
-    const payload = { sub: user.id, email: user.email };
+  private getRefreshToken(user: { id: number; email: string; role: Role }) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
     return this.jwtService.sign(payload, {
       expiresIn: '1d',
       secret: 'refresh_token_secret',
@@ -43,7 +42,6 @@ export class AuthService {
     email: string,
     password: string,
     role: Role,
-    
   ) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -57,11 +55,20 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    let userRole: Role;
+    if (role === 'STUDENT') {
+      userRole = Role.STUDENT;
+    } else if (role === 'TEACHER') {
+      userRole = Role.TEACHER;
+    } else {
+      userRole = Role.ADMIN;
+    }
+
     const newUser = await this.prisma.user.create({
       data: {
         name,
         email,
-        role,
+        role: userRole,
         password: hashedPassword,
         isVerified: false,
       },
@@ -80,13 +87,24 @@ export class AuthService {
       user: newUser,
     };
   }
-  async loginUser(email: string, password: string, res: Response) {
+  async loginUser(
+    email: string,
+    password: string,
+    portal: string,
+    res: Response,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
     if (!user.isVerified) {
       throw new UnauthorizedException('User is not verified');
+    }
+    if (portal === 'admin' && user.role !== Role.ADMIN) {
+      throw new UnauthorizedException('Unauthorized access');
+    }
+    if (portal === 'user' && user.role === Role.ADMIN) {
+      throw new UnauthorizedException('Unauthorized access');
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -95,10 +113,12 @@ export class AuthService {
     const accessToken = this.getAccessToken({
       id: user.id,
       email: user.email,
+      role: user.role,
     });
     const refreshToken = this.getRefreshToken({
       id: user.id,
       email: user.email,
+      role: user.role,
     });
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
     await this.prisma.user.update({
@@ -156,10 +176,12 @@ export class AuthService {
     const accessToken = this.getAccessToken({
       id: user.id,
       email: user.email,
+      role: user.role,
     });
     const newRefreshToken = this.getRefreshToken({
       id: user.id,
       email: user.email,
+      role: user.role,
     });
     const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
     await this.prisma.user.update({
@@ -202,7 +224,7 @@ export class AuthService {
         hasdedCode: hashedOtp,
         expiresAt: new Date(Date.now() + 2 * 60 * 1000),
       },
-    })
+    });
     return { message: 'OTP sent successfully', status: true };
   }
   async verifyOtp(email: string, otp: string) {
