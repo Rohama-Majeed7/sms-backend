@@ -93,7 +93,10 @@ export class AuthService {
     portal: string,
     res: Response,
   ) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { schoolAdmin: true, school: true },
+    });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
@@ -131,17 +134,47 @@ export class AuthService {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
+    let existingUser;
+    switch (user.role) {
+      case 'ADMIN':
+        existingUser = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          schoolAdmin: user.schoolAdmin,
+          isVerified: user.isVerified,
+        };
+        break;
+      case 'TEACHER':
+        existingUser = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isVerified: user.isVerified,
+          schoolId: user.schoolId,
+          school: user.school,
+        };
+        break;
+      case 'STUDENT':
+        existingUser = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isVerified: user.isVerified,
+          schoolId: user.schoolId,
+          school: user.school,
+        };
+        break;
+      default:
+        throw new UnauthorizedException('Invalid user role');
+    }
     return {
       message: 'Login successful',
-      status: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isVerified: user.isVerified,
-      },
+      success: true,
+      data: existingUser,
       accessToken,
     };
   }

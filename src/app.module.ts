@@ -6,12 +6,14 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
+import { SchoolModule } from './school/school.module';
 
 @Module({
   imports: [
     UsersModule,
     PrismaModule,
     AuthModule,
+    SchoolModule,
     MailerModule.forRoot({
       transport: {
         service: 'gmail',

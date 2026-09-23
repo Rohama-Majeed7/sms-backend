@@ -1,21 +1,52 @@
-import { Controller, Get, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Req, Body } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/guards';
-@Controller('api/users')
+import { StudentProfileDto, TeacherProfileDto } from './user.dto';
+
+type AuthenticatedRequest = {
+  user: {
+    userId: string;
+  };
+};
+
+@Controller('api/')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
-  // @UseGuards(JwtAuthGuard)
-  getUsers() {
-    return this.usersService.getUsers();
-  }
-  @Get('profile')
+  @Get('student/profile')
   @UseGuards(JwtAuthGuard)
-  getUserProfile(@Request() req: any) {
-    const requestWithUser = req as { user?: { userId?: number } };
-    return this.usersService.getUserProfile(
-      requestWithUser.user?.userId as number,
+  getStudentProfile(@Req() req: AuthenticatedRequest) {
+    return this.usersService.getStudentProfile(parseInt(req.user.userId, 10));
+  }
+
+  @Get('teacher/profile')
+  @UseGuards(JwtAuthGuard)
+  getTeacherProfile(@Req() req: AuthenticatedRequest) {
+    return this.usersService.getTeacherProfile(parseInt(req.user.userId, 10));
+  }
+
+  @Put('student/profile')
+  @UseGuards(JwtAuthGuard)
+  updateStudentProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: StudentProfileDto,
+  ) {
+    return this.usersService.updateStudentProfile(
+      parseInt(req.user.userId, 10),
+      body,
+    );
+  }
+
+  @Put('teacher/profile')
+  @UseGuards(JwtAuthGuard)
+  updateTeacherProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: TeacherProfileDto,
+  ) {
+    return this.usersService.updateTeacherProfile(
+      parseInt(req.user.userId, 10),
+      body,
     );
   }
 }
