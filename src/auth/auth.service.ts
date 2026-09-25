@@ -3,7 +3,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Role } from '@prisma/client';
 import { Response } from 'express';
@@ -26,14 +26,28 @@ export class AuthService {
   private getAccessToken(user: { id: number; email: string; role: Role }) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     return this.jwtService.sign(payload, {
-      expiresIn: '15m',
+      expiresIn: '2m',
       secret: 'access_token_secret',
     });
   }
-  private getRefreshToken(user: { id: number; email: string; role: Role }) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+  private getRefreshToken(
+    user: {
+      id: number;
+      email: string;
+      role: Role;
+      sessionExpiresAt?: number;
+    },
+    expiresIn: JwtSignOptions['expiresIn'] = '5m',
+  ) {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      sessionExpiresAt: user.sessionExpiresAt,
+    };
+
     return this.jwtService.sign(payload, {
-      expiresIn: '1d',
+      expiresIn: expiresIn,
       secret: 'refresh_token_secret',
     });
   }
@@ -113,6 +127,7 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }
+    const sessionExpiresAt = Date.now() + 5 * 60 * 1000;
     const accessToken = this.getAccessToken({
       id: user.id,
       email: user.email,
@@ -122,6 +137,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: user.role,
+      sessionExpiresAt: sessionExpiresAt,
     });
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
     await this.prisma.user.update({
@@ -132,7 +148,7 @@ export class AuthService {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 5 * 60 * 1000, // 5 minutes
     });
     let existingUser;
     switch (user.role) {
@@ -154,7 +170,12 @@ export class AuthService {
           role: user.role,
           isVerified: user.isVerified,
           schoolId: user.schoolId,
-          school: user.school,
+          school: {
+            id: user.school?.id,
+            name: user.school?.name,
+            address: user.school?.address,
+            status: user.school?.status,
+          },
         };
         break;
       case 'STUDENT':
@@ -165,7 +186,12 @@ export class AuthService {
           role: user.role,
           isVerified: user.isVerified,
           schoolId: user.schoolId,
-          school: user.school,
+          school: {
+            id: user.school?.id,
+            name: user.school?.name,
+            address: user.school?.address,
+            status: user.school?.status,
+          },
         };
         break;
       default:
@@ -189,10 +215,12 @@ export class AuthService {
   }
 
   async refreshToken(refreshToken: string, res: Response) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not provided');
+    }
     const decoded = this.jwtService.verify(refreshToken, {
       secret: 'refresh_token_secret',
     });
-    console.log(decoded);
     const user = await this.prisma.user.findUnique({
       where: { id: decoded.sub },
     });
@@ -206,16 +234,26 @@ export class AuthService {
     if (!isRefreshTokenValid) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+    if (Date.now() >= decoded.sessionExpiresAt) {
+      throw new UnauthorizedException('Session expired');
+    }
+    const remainingMs = decoded.sessionExpiresAt - Date.now();
+
+    const remainingSeconds = Math.floor(remainingMs / 1000);
     const accessToken = this.getAccessToken({
       id: user.id,
       email: user.email,
       role: user.role,
     });
-    const newRefreshToken = this.getRefreshToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const newRefreshToken = this.getRefreshToken(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        sessionExpiresAt: decoded.sessionExpiresAt,
+      },
+      remainingSeconds,
+    );
     const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
     await this.prisma.user.update({
       where: { id: user.id },
@@ -223,17 +261,14 @@ export class AuthService {
     });
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: remainingMs,
     });
     return {
       message: 'Token refreshed successfully',
-      status: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+      success: true,
+      data: {
         accessToken: accessToken,
       },
     };

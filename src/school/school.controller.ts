@@ -1,6 +1,16 @@
-import { Body, Controller, Post, Patch, Param, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Patch,
+  Param,
+  Get,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { SchoolServices } from './school.service';
 import { schoolDto } from './school.dto';
+import { JwtAuthGuard } from 'src/guards/guards';
 @Controller('api/school')
 export class SchoolController {
   constructor(private readonly schoolServices: SchoolServices) {}
@@ -21,12 +31,13 @@ export class SchoolController {
     return this.schoolServices.getSchoolById(Number(schoolId));
   }
   @Post('connect/:schoolId')
+  @UseGuards(JwtAuthGuard)
   connectSchoolToUser(
     @Param('schoolId') schoolId: string,
-    @Body() body: { userId: number },
+    @Req() req: { user: { userId: number } },
   ) {
     return this.schoolServices.connectSchoolToUser(
-      body.userId,
+      req.user.userId,
       Number(schoolId),
     );
   }

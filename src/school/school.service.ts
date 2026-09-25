@@ -116,6 +116,12 @@ export class SchoolServices {
         where: {
           status: 'ACTIVE',
         },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          status: true,
+        },
       });
       return {
         message: 'Schools fetched successfully',
@@ -151,6 +157,7 @@ export class SchoolServices {
           id: true,
           name: true,
           email: true,
+          role: true,
           schoolId: true,
 
           school: {
@@ -158,10 +165,6 @@ export class SchoolServices {
               id: true,
               name: true,
               address: true,
-              ownerName: true,
-              ownerEmail: true,
-              ownerPhone: true,
-              status: true,
             },
           },
         },
