@@ -5,7 +5,10 @@ import { schoolDto } from './school.dto';
 @Injectable()
 export class SchoolServices {
   constructor(private readonly prisma: PrismaService) {}
-  createSchool = async (body: schoolDto) => {
+  createSchool = async (body: schoolDto, role: string) => {
+    if (role !== 'ADMIN') {
+      throw new ConflictException('You do not have access to create school');
+    }
     const {
       name,
       address,
@@ -48,7 +51,10 @@ export class SchoolServices {
       };
     }
   };
-  updateSchool = async (schoolId: number, body: schoolDto) => {
+  updateSchool = async (schoolId: number, body: schoolDto, role: string) => {
+    if (role !== 'ADMIN') {
+      throw new ConflictException('You do not have access to update school');
+    }
     const {
       name,
       address,

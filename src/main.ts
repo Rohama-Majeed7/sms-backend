@@ -8,8 +8,8 @@ async function bootstrap() {
   app.use(cookieParser());
 
   const config = new DocumentBuilder()
-    .setTitle('LMS API')
-    .setDescription('API documentation for LMS')
+    .setTitle('SMS API')
+    .setDescription('API documentation for SMS')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
