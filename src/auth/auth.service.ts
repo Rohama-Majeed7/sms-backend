@@ -146,7 +146,7 @@ export class AuthService {
     });
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 5 * 60 * 1000, // 5 minutes
     });
