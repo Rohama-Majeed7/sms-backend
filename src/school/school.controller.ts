@@ -66,6 +66,7 @@ export class SchoolController {
     @Req() req: { user: { role: string } },
   ) {
     const { role } = req.user;
+    console.log('Role:', role);
     if (role !== 'ADMIN') {
       throw new ConflictException('You do not have access to view this school');
     }
