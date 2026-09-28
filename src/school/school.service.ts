@@ -106,6 +106,17 @@ export class SchoolServices {
       where: {
         id: schoolId,
       },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            isVerified: true,
+          },
+        },
+      },
     });
     if (!existingSchool) {
       throw new ConflictException('School not found');

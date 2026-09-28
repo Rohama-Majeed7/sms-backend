@@ -62,9 +62,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new UnauthorizedException(
-        'User with this email already exists in this school',
-      );
+      throw new UnauthorizedException('User with this email already exists.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -97,8 +95,8 @@ export class AuthService {
 
     return {
       message: 'User registered successfully',
-      status: true,
-      user: newUser,
+      success: true,
+      data: newUser,
     };
   }
   async loginUser(
@@ -211,7 +209,7 @@ export class AuthService {
       data: { refreshToken: '' },
     });
     res.clearCookie('refreshToken');
-    return { message: 'Logout successful', status: true };
+    return { message: 'Logout successful', success: true, data: null };
   }
 
   async refreshToken(refreshToken: string, res: Response) {
@@ -293,7 +291,7 @@ export class AuthService {
         expiresAt: new Date(Date.now() + 2 * 60 * 1000),
       },
     });
-    return { message: 'OTP sent successfully', status: true };
+    return { message: 'OTP sent successfully', success: true, data: null };
   }
   async verifyOtp(email: string, otp: string) {
     const otpRecord = await this.prisma.otp.findUnique({
@@ -317,7 +315,7 @@ export class AuthService {
     await this.prisma.otp.deleteMany({
       where: { email },
     });
-    return { message: 'OTP verified successfully', status: true };
+    return { message: 'OTP verified successfully', success: true, data: null };
   }
   async resetPassword(email: string, newPassword: string) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -327,6 +325,10 @@ export class AuthService {
       where: { email },
       data: { password: hashedPassword },
     });
-    return { message: 'Password reset successfully', status: true };
+    return {
+      message: 'Password reset successfully',
+      success: true,
+      data: null,
+    };
   }
 }
