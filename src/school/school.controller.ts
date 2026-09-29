@@ -60,15 +60,7 @@ export class SchoolController {
     return this.schoolServices.getAllSchools();
   }
   @Get('/:schoolId')
-  @UseGuards(JwtAuthGuard)
-  getSchoolById(
-    @Param('schoolId') schoolId: string,
-    @Req() req: { user: { role: string } },
-  ) {
-    const { role } = req.user;
-    if (role !== 'ADMIN') {
-      throw new ConflictException('You do not have access to view this school');
-    }
+  getSchoolById(@Param('schoolId') schoolId: string) {
     return this.schoolServices.getSchoolById(Number(schoolId));
   }
   @Post('connect/:schoolId')
