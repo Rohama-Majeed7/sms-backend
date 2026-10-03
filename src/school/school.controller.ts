@@ -7,7 +7,9 @@ import {
   Get,
   UseGuards,
   Req,
+  Query,
   ConflictException,
+  Delete,
 } from '@nestjs/common';
 import { SchoolServices } from './school.service';
 import { schoolDto } from './school.dto';
@@ -16,7 +18,7 @@ import { ApiOperation } from '@nestjs/swagger';
 import { ApiBadRequestResponse, ApiBody, ApiResponse } from '@nestjs/swagger';
 @Controller('api/school')
 export class SchoolController {
-  constructor(private readonly schoolServices: SchoolServices) {}
+  constructor(private readonly schoolServices: SchoolServices) { }
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
@@ -73,5 +75,95 @@ export class SchoolController {
       req.user.userId,
       Number(schoolId),
     );
+  }
+  @Get('/:id/teachers')
+  @UseGuards(JwtAuthGuard)
+  getSchoolTeachers(
+    @Param('id') schoolId: string,
+    @Req() req: { user: { userId: number } },
+    @Query('status') status: string,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.schoolServices.getSchoolTeachers(
+      Number(schoolId),
+      status,
+      search,
+      page,
+      limit,
+      req.user.userId,
+    );
+  }
+  @Get('/:id/students')
+  @UseGuards(JwtAuthGuard)
+  getSchoolStudents(
+    @Param('id') schoolId: string,
+    @Req() req: { user: { userId: number } },
+    @Query('status') status: string,
+    @Query('search') search?: string,
+  ) {
+    return this.schoolServices.getSchoolStudents(
+      Number(schoolId),
+      status,
+      search,
+      req.user.userId,
+    );
+  }
+  @Get('/teachers/:id')
+  getSchoolTeacher(
+    @Param('id') teacherId: string,
+    @Query('schoolId') schoolId: string,
+  ) {
+    return this.schoolServices.getSchoolTeacher(
+      Number(teacherId),
+      Number(schoolId),
+    );
+  }
+  @Get('/students/:id')
+  getSchoolStudent(
+    @Param('id') studentId: string,
+    @Query('schoolId') schoolId: string,
+  ) {
+    return this.schoolServices.getSchoolStudent(
+      Number(studentId),
+      Number(schoolId),
+    );
+  }
+  @Delete('/students/:studentId')
+  deleteSchoolStudent(
+    @Param('studentId') studentId: string,
+    @Query('schoolId') schoolId: string,
+  ) {
+    return this.schoolServices.deleteSchoolStudent(
+      Number(studentId),
+      Number(schoolId),
+    );
+  }
+  @Delete('/teachers/:teacherId')
+  deleteSchoolTeacher(
+    @Param('teacherId') teacherId: string,
+    @Query('schoolId') schoolId: string,
+  ) {
+    return this.schoolServices.deleteSchoolTeacher(
+      Number(teacherId),
+      Number(schoolId),
+    );
+  }
+  @Post('/teachers')
+  addTeacherToSchool(
+    @Body()
+    body: {
+      schoolId: number;
+      name: string;
+      email: string;
+      role: string;
+      employeeNumber: string;
+      qualification: string;
+      joiningDate: string;
+      specialization: string;
+    },
+  ) {
+    return this.schoolServices.addSchoolTeacher(body);
   }
 }

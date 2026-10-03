@@ -11,6 +11,8 @@ import {
   SendOTPDto,
   VerifyOTPDto,
   ResetPasswordDto,
+  SetPasswordDto,
+  ResendSetPasswordTokenDto,
 } from './dto/auth.dto';
 import {
   ApiTags,
@@ -28,7 +30,7 @@ import { JwtAuthGuard } from 'src/guards/guards';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   @Post('signup')
   @ApiOperation({
@@ -174,4 +176,44 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.email, dto.newPassword);
   }
-}
+  @Post('set-password')
+  @ApiOperation({
+    summary: 'Set Password',
+    description: "Set the user's password using a password setup token and a new password.",
+  })
+  @ApiBody({
+    type: SetPasswordDto,
+  })
+  @ApiOkResponse({
+    description: 'Password set successfully.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired password setup token.',
+  })
+  async setPassword(@Body() body: { token: string; password: string }) {
+    return this.authService.setPassword(body.token, body.password);
+  }
+  @Post('resend-link')
+  @ApiOperation({
+    summary: 'Resend Password Setup Link',
+    description: "Resend the password setup link to the user's email.",
+  })
+  @ApiBody({
+    type: ResendSetPasswordTokenDto,
+  })
+  @ApiOkResponse({
+    description: 'Password setup link resent successfully.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired password setup token.',
+  })
+  async resendPasswordSetupLink(@Body() body: { token: string }) {
+    return this.authService.resendPasswordSetupToken(body.token);
+  }
+} 

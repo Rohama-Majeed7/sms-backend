@@ -4,29 +4,26 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from '../services/mail.service';
 import { Role } from '@prisma/client';
 import { Response } from 'express';
+import * as crypto from 'crypto';
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly mailService: MailerService,
-  ) {}
+    private readonly mailService: MailService,
+  ) { }
 
   private async sendOtpCode(email: string, otp: string) {
-    await this.mailService.sendMail({
-      to: email,
-      subject: 'OTP Verification',
-      text: `Your OTP is ${otp}. This OTP will expire in 2 minutes. Please do not share it with anyone.`,
-    });
+    await this.mailService.sendOtp(email, otp);
   }
 
   private getAccessToken(user: { id: number; email: string; role: Role }) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     return this.jwtService.sign(payload, {
-      expiresIn: '2m',
+      expiresIn: '15m',
       secret: 'access_token_secret',
     });
   }
@@ -37,7 +34,7 @@ export class AuthService {
       role: Role;
       sessionExpiresAt?: number;
     },
-    expiresIn: JwtSignOptions['expiresIn'] = '5m',
+    expiresIn: JwtSignOptions['expiresIn'] = '5d',
   ) {
     const payload = {
       sub: user.id,
@@ -125,7 +122,7 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }
-    const sessionExpiresAt = Date.now() + 5 * 60 * 1000;
+    const sessionExpiresAt = Date.now() + 5 * 24 * 60 * 60 * 1000;
     const accessToken = this.getAccessToken({
       id: user.id,
       email: user.email,
@@ -146,7 +143,7 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 5 * 60 * 1000, // 5 minutes
+      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
     });
     let existingUser;
     switch (user.role) {
@@ -327,6 +324,93 @@ export class AuthService {
     });
     return {
       message: 'Password reset successfully',
+      success: true,
+      data: null,
+    };
+  }
+  async setPassword(token: string, password: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const passwordTokenRecord = await this.prisma.passwordToken.findUnique({
+      where: {
+        tokenHash,
+      },
+    });
+    if (!passwordTokenRecord) {
+      throw new UnauthorizedException('Invalid password setup token');
+    }
+
+    if (passwordTokenRecord.usedAt) {
+      throw new UnauthorizedException(
+        'Password setup token has already been used',
+      );
+    }
+
+    if (passwordTokenRecord.expiresAt < new Date()) {
+      throw new UnauthorizedException('Password setup token has expired');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: passwordTokenRecord.userId,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          password: hashedPassword,
+        },
+      }),
+
+      this.prisma.passwordToken.update({
+        where: {
+          id: passwordTokenRecord.id,
+        },
+        data: {
+          usedAt: new Date(),
+        },
+      }),
+    ]);
+
+    return {
+      message: 'Password set successfully',
+      success: true,
+      data: null,
+    };
+  }
+  async resendPasswordSetupToken(token: string) {
+    const passwordTokenRecord = await this.prisma.passwordToken.findFirst({ where: { tokenHash: token } });
+    if (!passwordTokenRecord) throw new UnauthorizedException('User not found');
+    const newToken = crypto.randomUUID();
+    const tokenHash = crypto.createHash('sha256').update(newToken).digest('hex');
+    await this.prisma.passwordToken.create({
+      data: {
+        tokenHash,
+        userId: passwordTokenRecord.userId,
+        expiresAt: new Date(
+          Date.now() + 2 * 60 * 1000,
+        ),
+      },
+    });
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: passwordTokenRecord.userId,
+      },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
+    await this.mailService.sendPasswordResetEmail(user.email, newToken);
+    return {
+      message: 'Password setup link resent successfully',
       success: true,
       data: null,
     };

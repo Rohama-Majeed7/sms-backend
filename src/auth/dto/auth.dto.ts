@@ -84,3 +84,22 @@ export class ResetPasswordDto {
     @IsString()
     newPassword!: string;
 }
+export class SetPasswordDto {
+    @ApiProperty({
+        example: 'password-setup-token',
+    })
+    @IsString()
+    token!: string;
+    @ApiProperty({
+        example: 'NewPassword123',
+    })
+    @IsString()
+    newPassword!: string;
+}
+export class ResendSetPasswordTokenDto {
+    @ApiProperty({
+        example: 'password-setup-token',
+    })
+    @IsString()
+    token!: string;
+}

@@ -41,6 +41,7 @@ model User {
   teacher Teacher?
   schoolId Int? 
   school   School?      @relation("School_User", fields: [schoolId], references: [id])
+  passwordToken PasswordToken?
   schoolAdmin School? @relation("SchoolAdmin")
 }
 model Student {
@@ -81,7 +82,7 @@ model Teacher {
 }
 
 model School {
-  id          Int       @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   address     String?
   ownerName   String
@@ -102,6 +103,17 @@ model Otp {
   hasdedCode String
   expiresAt  DateTime
   created DateTime @default(now())
+}
+
+model PasswordToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int @unique
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 
