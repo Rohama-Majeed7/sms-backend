@@ -16,6 +16,7 @@ import { schoolDto } from './school.dto';
 import { JwtAuthGuard } from 'src/guards/guards';
 import { ApiOperation } from '@nestjs/swagger';
 import { ApiBadRequestResponse, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { Gender } from '@prisma/client';
 @Controller('api/school')
 export class SchoolController {
   constructor(private readonly schoolServices: SchoolServices) { }
@@ -102,11 +103,15 @@ export class SchoolController {
     @Req() req: { user: { userId: number } },
     @Query('status') status: string,
     @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.schoolServices.getSchoolStudents(
       Number(schoolId),
       status,
       search,
+      page,
+      limit,
       req.user.userId,
     );
   }
@@ -165,5 +170,21 @@ export class SchoolController {
     },
   ) {
     return this.schoolServices.addSchoolTeacher(body);
+  }
+  @Post('/students')
+  addStudentToSchool(
+    @Body()
+    body: {
+      schoolId: number;
+      name: string;
+      email: string;
+      gender: Gender;
+      dateOfBirth: string;
+      address: string;
+      guardianName: string;
+      guardianPhone: string;
+    },
+  ) {
+    return this.schoolServices.addSchoolStudent(body);
   }
 }

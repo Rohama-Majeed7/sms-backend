@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
@@ -389,26 +389,36 @@ export class AuthService {
     };
   }
   async resendPasswordSetupToken(token: string) {
-    const passwordTokenRecord = await this.prisma.passwordToken.findFirst({ where: { tokenHash: token } });
-    if (!passwordTokenRecord) throw new UnauthorizedException('User not found');
-    const newToken = crypto.randomUUID();
-    const tokenHash = crypto.createHash('sha256').update(newToken).digest('hex');
-    await this.prisma.passwordToken.create({
-      data: {
-        tokenHash,
-        userId: passwordTokenRecord.userId,
-        expiresAt: new Date(
-          Date.now() + 2 * 60 * 1000,
-        ),
-      },
-    });
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const passwordTokenRecord = await this.prisma.passwordToken.findFirst({ where: { tokenHash } });
+    if (!passwordTokenRecord) throw new UnauthorizedException('Invalid or expired token use latest link sent to your email');
     const user = await this.prisma.user.findUnique({
       where: {
         id: passwordTokenRecord.userId,
       },
     });
     if (!user) throw new UnauthorizedException('User not found');
-    await this.mailService.sendPasswordResetEmail(user.email, newToken);
+    if (user?.password) {
+      throw new ForbiddenException('Password already set use your password if you forgot use forgot password');
+    }
+    const rawToken = crypto.randomBytes(32).toString('hex');
+
+    const newtokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await this.prisma.passwordToken.deleteMany({
+      where: {
+        userId: passwordTokenRecord.userId,
+      },
+    })
+    await this.prisma.passwordToken.create({
+      data: {
+        tokenHash: newtokenHash,
+        userId: passwordTokenRecord.userId,
+        expiresAt: new Date(
+          Date.now() + 2 * 60 * 1000,
+        ),
+      },
+    });
+    await this.mailService.sendPasswordResetEmail(user?.email, rawToken);
     return {
       message: 'Password setup link resent successfully',
       success: true,

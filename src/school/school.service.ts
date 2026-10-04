@@ -5,7 +5,7 @@ import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { schoolDto } from './school.dto';
 import * as crypto from 'crypto';
-
+import { Gender } from '@prisma/client';
 @Injectable()
 export class SchoolServices {
   constructor(
@@ -294,6 +294,8 @@ export class SchoolServices {
     schoolId: number,
     status: string,
     search?: string,
+    page?: string,
+    limit?: string,
     adminId?: number,
   ) => {
     if (!schoolId) {
@@ -340,20 +342,36 @@ export class SchoolServices {
       ];
     }
 
-    const students = await this.prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isVerified: true,
-      },
-    });
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
+
+    const [students, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isVerified: true,
+
+        },
+      }),
+      this.prisma.user.count({
+        where,
+      }),
+    ])
     return {
       message: 'School students fetched successfully',
       data: students,
       success: true,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: Number(total),
+      },
     };
   };
   getSchoolStudent = async (studentId: number, schoolId: number) => {
@@ -649,4 +667,97 @@ export class SchoolServices {
       success: true,
     };
   };
+  addSchoolStudent = async (body: {
+    schoolId: number;
+    name: string;
+    email: string;
+    gender: Gender;
+    dateOfBirth: string;
+    address: string;
+    guardianName: string;
+    guardianPhone: string;
+  }) => {
+    const existingSchool = await this.prisma.school.findUnique({
+      where: {
+        id: body.schoolId,
+      }
+    })
+    if (!existingSchool) {
+      throw new ConflictException('School not found')
+    }
+    const student = await this.prisma.user.create({
+      data: {
+        name: body.name,
+        email: body.email,
+        password: '',
+        role: 'STUDENT',
+        schoolId: body.schoolId,
+        isVerified: true,
+        student: {
+          create: {
+            dateOfBirth: new Date(body.dateOfBirth),
+            gender: body.gender,
+            address: body.address,
+            guardianName: body.guardianName,
+            guardianPhone: body.guardianPhone,
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isVerified: true,
+        student: {
+          select: {
+            id: true,
+            userId: true,
+            dateOfBirth: true,
+            gender: true,
+            address: true,
+            guardianName: true,
+            guardianPhone: true,
+          },
+        },
+      },
+    })
+
+    await this.prisma.student.update({
+      where: {
+        id: student?.student?.id
+      },
+      data: {
+        userId: student.id
+      }
+    })
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+
+    const passwordToken = await this.prisma.passwordToken.create({
+      data: {
+        userId: student.id,
+        tokenHash,
+        expiresAt: new Date(
+          Date.now() + 2 * 60 * 1000,
+        ),
+      },
+    });
+    if (!passwordToken) {
+      throw new ConflictException('Failed to create password token');
+    }
+    console.log("token ========================>", passwordToken)
+    await this.mailService.sendPasswordResetEmail(student.email, rawToken);
+
+    return {
+      message: 'School student added successfully',
+      data: student,
+      success: true,
+    };
+
+  }
 }
