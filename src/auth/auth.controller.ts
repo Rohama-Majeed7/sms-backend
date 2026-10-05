@@ -22,6 +22,7 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiExcludeEndpoint,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/guards/guards';
 
@@ -31,8 +32,9 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
   ) { }
-
+  // Register user
   @Post('signup')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Register User',
     description: 'Create a new user account.',
@@ -46,6 +48,9 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: 'Validation failed.',
   })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized access.',
+  })
   async registerUser(
     @Body()
     dto: SignupDto,
@@ -57,8 +62,9 @@ export class AuthController {
       dto.role as Role,
     );
   }
-
+  // Login user 
   @Post('login')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Login User',
     description: 'Authenticate user using email and password.',
@@ -86,8 +92,9 @@ export class AuthController {
       res,
     );
   }
-
+  // Logout user 
   @Post('logout')
+  @ApiBearerAuth('accessToken')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Logout User',
@@ -105,6 +112,7 @@ export class AuthController {
   ) {
     return this.authService.logoutUser(body.email, res);
   }
+  // Refresh token for user to get new access token
   @ApiExcludeEndpoint()
   @Post('refresh-token')
   async refreshToken(
@@ -114,7 +122,9 @@ export class AuthController {
     const refreshToken = req.cookies.refreshToken;
     return this.authService.refreshToken(refreshToken, res);
   }
+  // Send OTP for email verification for signup
   @Post('send-otp')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Send OTP',
     description:
@@ -135,7 +145,9 @@ export class AuthController {
   async sendOtp(@Body() dto: SendOTPDto) {
     return this.authService.sendOtp(dto.email);
   }
+  // Verify OTP for reset password and email verification
   @Post('verify-otp')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Verify OTP',
     description: "Verify the One-Time Password (OTP) sent to the user's email.",
@@ -155,7 +167,9 @@ export class AuthController {
   async verifyOtp(@Body() dto: VerifyOTPDto) {
     return this.authService.verifyOtp(dto.email, dto.otp);
   }
+  // Reset password when user forgot password
   @Post('reset-password')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Reset Password',
     description:
@@ -176,7 +190,9 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.email, dto.newPassword);
   }
+  // Set password when user is created for the first time on admin - password setup link
   @Post('set-password')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Set Password',
     description: "Set the user's password using a password setup token and a new password.",
@@ -196,7 +212,9 @@ export class AuthController {
   async setPassword(@Body() body: { token: string; password: string }) {
     return this.authService.setPassword(body.token, body.password);
   }
+  // Resend link for password setup 
   @Post('resend-link')
+  @ApiBearerAuth('accessToken')
   @ApiOperation({
     summary: 'Resend Password Setup Link',
     description: "Resend the password setup link to the user's email.",

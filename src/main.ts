@@ -11,7 +11,14 @@ async function bootstrap() {
     .setTitle('SMS API')
     .setDescription('API documentation for SMS')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'accessToken',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

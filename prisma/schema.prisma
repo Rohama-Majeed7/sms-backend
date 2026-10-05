@@ -43,6 +43,9 @@ model User {
   school   School?      @relation("School_User", fields: [schoolId], references: [id])
   passwordToken PasswordToken?
   schoolAdmin School? @relation("SchoolAdmin")
+
+  @@index([isVerified,name])
+
 }
 model Student {
   id              String    @id @default(cuid())
@@ -93,6 +96,7 @@ model School {
   admin       User?      @relation("SchoolAdmin", fields: [adminId], references: [id])
   users       User[]   @relation("School_User")
   createdAt   DateTime     @default(now())
+
 }
 
 

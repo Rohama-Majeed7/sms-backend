@@ -102,10 +102,13 @@ export class AuthService {
     portal: string,
     res: Response,
   ) {
+    console.time("DB");
+
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { schoolAdmin: true, school: true },
     });
+    console.timeEnd("DB");
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
