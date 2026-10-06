@@ -3,11 +3,29 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StudentProfileDto, TeacherProfileDto } from './user.dto';
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
   getStudentProfile = async (userId: number) => {
     try {
       const student = await this.prisma.student.findUnique({
         where: { userId },
+        select: {
+          id: true,
+          dateOfBirth: true,
+          address: true,
+          guardianPhone: true,
+          guardianName: true,
+          gender: true,
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              isVerified: true,
+              role: true
+            }
+          }
+        }
       });
       if (!student) {
         throw new Error('Student not found');
@@ -29,6 +47,23 @@ export class UsersService {
     try {
       const teacher = await this.prisma.teacher.findUnique({
         where: { userId },
+        select: {
+          id: true,
+          employeeNumber: true,
+          qualification: true,
+          specialization: true,
+          joiningDate: true,
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              isVerified: true,
+              role: true
+            }
+          }
+        }
       });
       if (!teacher) {
         throw new Error('Teacher not found');

@@ -3,7 +3,7 @@ import { MailService } from '../services/mail.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { schoolDto } from './school.dto';
+import { AddStudentDto, AddTeacherDto, schoolDto } from './school.dto';
 import * as crypto from 'crypto';
 import { Gender } from '@prisma/client';
 @Injectable()
@@ -168,6 +168,14 @@ export class SchoolServices {
     });
     if (!existingSchool) {
       throw new ConflictException('School not found');
+    }
+    const existingUser = await this.prisma.user.findUnique({
+      where: {
+        id: userId
+      },
+    })
+    if (existingUser?.schoolId) {
+      throw new ConflictException('User already connected to a school');
     }
     try {
       const user = await this.prisma.user.update({
@@ -586,16 +594,7 @@ export class SchoolServices {
       success: true,
     };
   };
-  addSchoolTeacher = async (body: {
-    schoolId: number;
-    name: string;
-    email: string;
-    role: string;
-    employeeNumber: string;
-    qualification: string;
-    joiningDate: string;
-    specialization: string;
-  }) => {
+  addSchoolTeacher = async (body: AddTeacherDto) => {
     const existingSchool = await this.prisma.school.findUnique({
       where: {
         id: body.schoolId,
@@ -667,16 +666,7 @@ export class SchoolServices {
       success: true,
     };
   };
-  addSchoolStudent = async (body: {
-    schoolId: number;
-    name: string;
-    email: string;
-    gender: Gender;
-    dateOfBirth: string;
-    address: string;
-    guardianName: string;
-    guardianPhone: string;
-  }) => {
+  addSchoolStudent = async (body: AddStudentDto) => {
     const existingSchool = await this.prisma.school.findUnique({
       where: {
         id: body.schoolId,

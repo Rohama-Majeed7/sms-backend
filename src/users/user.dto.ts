@@ -45,7 +45,7 @@ export class StudentProfileDto {
   @IsString()
   guardianName!: string;
   @ApiProperty({
-    example: 'Male',
+    example: 'MALE',
   })
   @IsString()
   gender!: Gender;

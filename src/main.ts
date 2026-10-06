@@ -6,10 +6,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
+  app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
-    .setTitle('SMS API')
-    .setDescription('API documentation for SMS')
+    .setTitle('School Management System API')
+    .setDescription('API documentation for School Management System')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -21,10 +22,19 @@ async function bootstrap() {
     )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-
+  const document = SwaggerModule.createDocument(app, config, {
+    autoTagControllers: false,
+  });
+  document.tags = [
+    { name: 'Authentication', description: 'Authentication APIs' },
+    { name: 'Users', description: 'User APIs' },
+    { name: 'User - Profile', description: 'User Profile APIs' },
+    { name: "User - School Connection", description: "School Connection APIs" },
+    { name: 'User - Schools', description: "User Schools APIs" },
+    { name: 'Admin', description: 'Admin APIs' },
+    { name: 'Admin - School', description: 'Admin School APIs' }
+  ];
   SwaggerModule.setup('api/docs', app, document);
-
   app.enableCors({
     origin: [process.env.sms_user_portal_url, process.env.sms_admin_portal_url],
     credentials: true,

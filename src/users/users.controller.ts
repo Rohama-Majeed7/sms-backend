@@ -1,17 +1,18 @@
-import { Controller, Get, Put, Req, Body } from '@nestjs/common';
+import { Controller, Get, Put, Req, Body, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/guards';
 import { StudentProfileDto, TeacherProfileDto } from './user.dto';
-import { ApiOperation, ApiResponse, ApiBadRequestResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBadRequestResponse, ApiBody, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 type AuthenticatedRequest = {
   user: {
     userId: string;
+    role: string;
   };
 };
-
-@Controller('api/')
+@ApiTags("User - Profile")
+@Controller('')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
   // get student profile
@@ -31,7 +32,10 @@ export class UsersController {
   })
 
   getStudentProfile(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getStudentProfile(parseInt(req.user.userId, 10));
+    if (req.user.role !== 'STUDENT') {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    return this.usersService.getStudentProfile(parseInt(req.user.userId));
   }
   // get teacher profile
   @Get('teacher/profile')
@@ -49,6 +53,9 @@ export class UsersController {
     description: 'Validation failed.',
   })
   getTeacherProfile(@Req() req: AuthenticatedRequest) {
+    if (req.user.role !== 'TEACHER') {
+      throw new UnauthorizedException('Unauthorized');
+    }
     return this.usersService.getTeacherProfile(parseInt(req.user.userId, 10));
   }
   // update student profile
@@ -73,8 +80,11 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
     @Body() body: StudentProfileDto,
   ) {
+    if (req.user.role !== 'STUDENT') {
+      throw new UnauthorizedException('Unauthorized');
+    }
     return this.usersService.updateStudentProfile(
-      parseInt(req.user.userId, 10),
+      parseInt(req.user.userId),
       body,
     );
   }
@@ -100,8 +110,11 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
     @Body() body: TeacherProfileDto,
   ) {
+    if (req.user.role !== 'TEACHER') {
+      throw new UnauthorizedException('Unauthorized');
+    }
     return this.usersService.updateTeacherProfile(
-      parseInt(req.user.userId, 10),
+      parseInt(req.user.userId),
       body,
     );
   }
