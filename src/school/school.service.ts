@@ -216,7 +216,7 @@ export class SchoolServices {
   };
   getSchoolTeachers = async (
     schoolId: number,
-    status: string,
+    status?: string,
     search?: string,
     page?: string,
     limit?: string,
@@ -273,8 +273,8 @@ export class SchoolServices {
     const [teachers, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        skip,
-        take,
+        skip: skip ? Number(skip) : 0,
+        take: take ? Number(take) : 10,
         select: {
           id: true,
           name: true,

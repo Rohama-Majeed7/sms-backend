@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { SchoolModule } from './school/school.module';
+import { ClassModule } from './class/class.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { SchoolModule } from './school/school.module';
     PrismaModule,
     AuthModule,
     SchoolModule,
+    ClassModule,
     MailerModule.forRoot({
       transport: {
         service: 'gmail',
@@ -30,4 +32,4 @@ import { SchoolModule } from './school/school.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

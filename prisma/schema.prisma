@@ -17,7 +17,10 @@ enum Role {
   PARENT
   ADMIN
 }
-
+enum ClassStatus {
+  DRAFT
+  PUBLISHED
+}
 enum Gender {
   MALE
   FEMALE
@@ -27,6 +30,15 @@ enum SchoolStatus{
   ACTIVE
   INACTIVE
   PENDING
+}
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }
 model User {
   id Int @id @default(autoincrement())
@@ -43,7 +55,10 @@ model User {
   school   School?      @relation("School_User", fields: [schoolId], references: [id])
   passwordToken PasswordToken?
   schoolAdmin School? @relation("SchoolAdmin")
-
+  sectionIncharge Section? @relation("SectionIncharge")
+  sectionId Int? 
+  sectionStudent Section? @relation("SectionStudent",fields:[sectionId],references:[id])
+  timeTable TimeTable[]
   @@index([isVerified,name])
 
 }
@@ -83,7 +98,6 @@ model Teacher {
 
   @@map("teachers")
 }
-
 model School {
   id          Int     @id @default(autoincrement())
   name        String
@@ -95,11 +109,52 @@ model School {
   adminId     Int? @unique
   admin       User?      @relation("SchoolAdmin", fields: [adminId], references: [id])
   users       User[]   @relation("School_User")
+  classes     Class[] 
   createdAt   DateTime     @default(now())
-
 }
 
-
+model Class {
+  id Int @id @default(autoincrement())
+  name String 
+  status ClassStatus @default(DRAFT)
+  sections Section[]
+  subjects Subject[]  
+  schoolId Int 
+  school School @relation(fields: [schoolId], references: [id])
+  @@unique([name,schoolId],name:"class_school")
+}
+model Section {
+  id Int @id @default(autoincrement())
+  name String 
+  inchargeId Int? @unique
+  incharge User? @relation("SectionIncharge", fields: [inchargeId], references: [id])
+  students User[] @relation("SectionStudent")
+  classId Int
+  class Class @relation(fields: [classId], references: [id])
+  @@unique([name,classId],name:"section_class")
+  timeTable TimeTable[]
+}
+model Subject {
+  id Int @id @default(autoincrement())
+  name String 
+  classId Int
+  class Class @relation(fields: [classId], references: [id])
+  timeTable TimeTable[]
+  @@unique([name,classId],name:"subject_class")
+}
+model TimeTable {
+  id Int @id @default(autoincrement())
+  teacherId Int
+  sectionId Int
+  subjectId Int
+  day WeekDay
+  startTime Int
+  endTime Int
+  section Section @relation(fields: [sectionId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher User @relation(fields: [teacherId], references: [id])
+  @@index([sectionId,day,startTime])
+}
 
 model Otp {
   id String @id @default(uuid())
@@ -108,7 +163,6 @@ model Otp {
   expiresAt  DateTime
   created DateTime @default(now())
 }
-
 model PasswordToken {
   id        Int      @id @default(autoincrement())
   userId    Int @unique
