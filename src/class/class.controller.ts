@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { ClassService } from "./class.service";
 import { CreateClassDto, CreateTimeTableDto, UpdateClassDto, UpdateTimeTableDto } from "./class.dto";
+import { ClassStatus } from "@prisma/client";
 
 @Controller("class")
 export class ClassController {
@@ -12,8 +13,12 @@ export class ClassController {
     @Get()
     async getAllClasses(
         @Query("schoolId") schoolId: string,
+        @Query("status") status?: ClassStatus,
+        @Query("page") page?: string,
+        @Query("limit") limit?: string,
+        @Query("search") search?: string,
     ) {
-        return this.classService.getAllClasses(Number(schoolId));
+        return this.classService.getAllClasses(Number(schoolId), Number(page), Number(limit), search, status);
     }
     @Get("/:classId")
     async getClassById(@Param("classId") classId: string, @Query("schoolId") schoolId: string) {
@@ -31,9 +36,9 @@ export class ClassController {
     async deleteClassSection(@Param("classId") classId: string, @Param("sectionId") sectionId: string) {
         return this.classService.deleteClassSection(Number(classId), Number(sectionId));
     }
-    @Delete("/subject/:subjectId/class/:classId")
-    async deleteClassSubject(@Param("subjectId") subjectId: string, @Param("classId") classId: string) {
-        return this.classService.deleteClassSubject(Number(subjectId), Number(classId));
+    @Delete("/:classId/subject/:subjectId")
+    async deleteClassSubject(@Param("classId") classId: string, @Param("subjectId") subjectId: string) {
+        return this.classService.deleteClassSubject(Number(classId), Number(subjectId));
     }
 
 

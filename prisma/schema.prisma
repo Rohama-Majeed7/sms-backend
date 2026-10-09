@@ -20,6 +20,7 @@ enum Role {
 enum ClassStatus {
   DRAFT
   PUBLISHED
+  ALL
 }
 enum Gender {
   MALE

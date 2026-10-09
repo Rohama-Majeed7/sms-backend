@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateClassDto, CreateTimeTableDto, UpdateClassDto, UpdateTimeTableDto } from "./class.dto";
+import { ClassStatus, Prisma } from "@prisma/client";
 
 @Injectable()
 export class ClassService {
@@ -153,17 +154,65 @@ export class ClassService {
 
         return { message: "Class updated successfully", data: classes, success: true }
     }
-    async getAllClasses(schoolId: number) {
-        const classes = await this.prisma.class.findMany({
-            where: {
-                schoolId: schoolId
-            },
-            include: {
-                sections: true,
-                subjects: true
+    async getAllClasses(schoolId: number, page: number, limit: number, search: string | undefined, status: ClassStatus | undefined) {
+        const where: Prisma.ClassWhereInput = {
+            schoolId: schoolId,
+        };
+
+        // Status filter
+        if (status) {
+            if (status === "PUBLISHED") {
+                where.status = "PUBLISHED";
             }
-        })
-        return { message: "Classes fetched successfully", data: classes, success: true }
+
+            if (status === "DRAFT") {
+                where.status = "DRAFT";
+            }
+            if (status === "ALL") {
+                delete where.status;
+            }
+        }
+
+        // Search filter
+        if (search?.trim()) {
+            where.OR = [
+                {
+                    name: {
+                        contains: search.trim(),
+                        mode: 'insensitive',
+                    },
+                },
+
+            ];
+        }
+
+        const skip = page && limit ? (Number(page) - 1) * Number(limit) : undefined;
+        const take = limit && page ? Number(limit) : undefined;
+
+        const [classes, total] = await Promise.all([
+            this.prisma.class.findMany({
+                where,
+                take: take,
+                skip: skip,
+                include: {
+                    sections: true,
+                    subjects: true
+                }
+            }),
+            this.prisma.class.count({ where }),
+        ]);
+
+        return {
+            message: "Classes fetched successfully",
+            data: classes,
+            success: true,
+            pagination: {
+                page,
+                limit,
+                total,
+            },
+        };
+
     }
     async updateClass(id: number, body: UpdateClassDto) {
         const classExist = await this.prisma.class.findUnique({
@@ -337,7 +386,7 @@ export class ClassService {
         })
         return { message: "Section deleted successfully", success: true }
     }
-    async deleteClassSubject(subjectId: number, classId: number) {
+    async deleteClassSubject(classId: number, subjectId: number) {
         const subject = await this.prisma.subject.findUnique({
             where: {
                 id: subjectId,
