@@ -59,10 +59,8 @@ export class SchoolServices {
       };
     }
   };
-  updateSchool = async (schoolId: number, body: schoolDto, role: string) => {
-    if (role !== 'ADMIN') {
-      throw new ConflictException('You do not have access to update school');
-    }
+  updateSchool = async (schoolId: number, body: schoolDto) => {
+
     const {
       name,
       address,
@@ -364,6 +362,7 @@ export class SchoolServices {
           email: true,
           role: true,
           isVerified: true,
+          sectionId: true,
 
         },
       }),

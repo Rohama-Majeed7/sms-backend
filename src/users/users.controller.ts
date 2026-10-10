@@ -8,7 +8,6 @@ import { ApiOperation, ApiResponse, ApiBadRequestResponse, ApiBody, ApiBearerAut
 type AuthenticatedRequest = {
   user: {
     userId: string;
-    role: string;
   };
 };
 @ApiTags("User - Profile")
@@ -32,9 +31,7 @@ export class UsersController {
   })
 
   getStudentProfile(@Req() req: AuthenticatedRequest) {
-    if (req.user.role !== 'STUDENT') {
-      throw new UnauthorizedException('Unauthorized');
-    }
+
     return this.usersService.getStudentProfile(parseInt(req.user.userId));
   }
   // get teacher profile
@@ -53,9 +50,7 @@ export class UsersController {
     description: 'Validation failed.',
   })
   getTeacherProfile(@Req() req: AuthenticatedRequest) {
-    if (req.user.role !== 'TEACHER') {
-      throw new UnauthorizedException('Unauthorized');
-    }
+
     return this.usersService.getTeacherProfile(parseInt(req.user.userId, 10));
   }
   // update student profile
@@ -80,9 +75,7 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
     @Body() body: StudentProfileDto,
   ) {
-    if (req.user.role !== 'STUDENT') {
-      throw new UnauthorizedException('Unauthorized');
-    }
+
     return this.usersService.updateStudentProfile(
       parseInt(req.user.userId),
       body,
@@ -110,9 +103,7 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
     @Body() body: TeacherProfileDto,
   ) {
-    if (req.user.role !== 'TEACHER') {
-      throw new UnauthorizedException('Unauthorized');
-    }
+
     return this.usersService.updateTeacherProfile(
       parseInt(req.user.userId),
       body,

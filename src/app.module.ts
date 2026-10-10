@@ -8,7 +8,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { SchoolModule } from './school/school.module';
 import { ClassModule } from './class/class.module';
-
+import { SectionModule } from './section/section.module';
 @Module({
   imports: [
     UsersModule,
@@ -16,6 +16,7 @@ import { ClassModule } from './class/class.module';
     AuthModule,
     SchoolModule,
     ClassModule,
+    SectionModule,
     MailerModule.forRoot({
       transport: {
         service: 'gmail',

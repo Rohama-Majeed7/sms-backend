@@ -57,11 +57,10 @@ model User {
   passwordToken PasswordToken?
   schoolAdmin School? @relation("SchoolAdmin")
   sectionIncharge Section? @relation("SectionIncharge")
-  sectionId Int? 
+  sectionId Int?
   sectionStudent Section? @relation("SectionStudent",fields:[sectionId],references:[id])
   timeTable TimeTable[]
   @@index([isVerified,name])
-
 }
 model Student {
   id              String    @id @default(cuid())
@@ -156,7 +155,6 @@ model TimeTable {
   teacher User @relation(fields: [teacherId], references: [id])
   @@index([sectionId,day,startTime])
 }
-
 model Otp {
   id String @id @default(uuid())
   email String @unique

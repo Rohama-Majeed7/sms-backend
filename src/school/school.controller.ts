@@ -45,9 +45,7 @@ export class SchoolController {
     @Req() req: { user: { role: string } },
   ) {
     const { role } = req.user;
-    if (role !== "ADMIN") {
-      throw new ConflictException('You do not have access to create school');
-    }
+
     return this.schoolServices.createSchool(body, role);
   }
   // Update school
@@ -73,13 +71,10 @@ export class SchoolController {
   updateSchool(
     @Body() body: schoolDto,
     @Param('schoolId') schoolId: string,
-    @Req() req: { user: { role: string } },
+
   ) {
-    const { role } = req.user;
-    if (role !== "ADMIN") {
-      throw new ConflictException('You do not have access to update school');
-    }
-    return this.schoolServices.updateSchool(Number(schoolId), body, role);
+
+    return this.schoolServices.updateSchool(Number(schoolId), body);
   }
 
   // Get school by id
@@ -99,11 +94,8 @@ export class SchoolController {
   @ApiBadRequestResponse({
     description: 'Validation failed.',
   })
-  getSchoolById(@Param('schoolId') schoolId: string, @Req() req: { user: { role: string } }) {
-    const { role } = req.user;
-    if (role !== "ADMIN") {
-      throw new ConflictException('You do not have access to get school');
-    }
+  getSchoolById(@Param('schoolId') schoolId: string) {
+
     return this.schoolServices.getSchoolById(Number(schoolId));
   }
 
@@ -126,15 +118,13 @@ export class SchoolController {
   })
   getSchoolTeachers(
     @Param('schoolId') schoolId: string,
-    @Req() req: { user: { userId: number, role: string } },
+    @Req() req: { user: { userId: number } },
     @Query('status') status: string,
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to get school teachers');
-    }
+
     return this.schoolServices.getSchoolTeachers(
       Number(schoolId),
       status,
@@ -163,15 +153,13 @@ export class SchoolController {
   })
   getSchoolStudents(
     @Param('schoolId') schoolId: string,
-    @Req() req: { user: { userId: number, role: string } },
+    @Req() req: { user: { userId: number } },
     @Query('status') status: string,
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to get school students');
-    }
+
     return this.schoolServices.getSchoolStudents(
       Number(schoolId),
       status,
@@ -201,11 +189,8 @@ export class SchoolController {
   getSchoolTeacher(
     @Param('teacherId') teacherId: string,
     @Query('schoolId') schoolId: string,
-    @Req() req: { user: { role: string } },
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to get school teacher');
-    }
+
     return this.schoolServices.getSchoolTeacher(
       Number(teacherId),
       Number(schoolId),
@@ -230,11 +215,7 @@ export class SchoolController {
   getSchoolStudent(
     @Param('studentId') studentId: string,
     @Query('schoolId') schoolId: string,
-    @Req() req: { user: { role: string } },
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to get school student');
-    }
     return this.schoolServices.getSchoolStudent(
       Number(studentId),
       Number(schoolId),
@@ -260,11 +241,7 @@ export class SchoolController {
   deleteSchoolStudent(
     @Param('studentId') studentId: string,
     @Query('schoolId') schoolId: string,
-    @Req() req: { user: { role: string } },
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to delete school student');
-    }
     return this.schoolServices.deleteSchoolStudent(
       Number(studentId),
       Number(schoolId),
@@ -290,11 +267,7 @@ export class SchoolController {
   deleteSchoolTeacher(
     @Param('teacherId') teacherId: string,
     @Query('schoolId') schoolId: string,
-    @Req() req: { user: { role: string } },
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to delete school teacher');
-    }
     return this.schoolServices.deleteSchoolTeacher(
       Number(teacherId),
       Number(schoolId),
@@ -320,11 +293,7 @@ export class SchoolController {
   addTeacherToSchool(
     @Body()
     body: AddTeacherDto,
-    @Req() req: { user: { role: string } },
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to add teacher to school');
-    }
     return this.schoolServices.addSchoolTeacher(body);
   }
   // Add student to school
@@ -347,11 +316,7 @@ export class SchoolController {
   addStudentToSchool(
     @Body()
     body: AddStudentDto,
-    @Req() req: { user: { role: string } },
   ) {
-    if (req?.user?.role !== "ADMIN") {
-      throw new ConflictException('You do not have access to add student to school');
-    }
     return this.schoolServices.addSchoolStudent(body);
   }
   @ApiTags("User - School Connection")
@@ -372,11 +337,8 @@ export class SchoolController {
   })
   connectSchoolToUser(
     @Param('schoolId') schoolId: string,
-    @Req() req: { user: { userId: number, role: string } },
+    @Req() req: { user: { userId: number } },
   ) {
-    if (req.user.role !== "TEACHER" && req.user.role !== "STUDENT") {
-      throw new UnauthorizedException("You do not have access to perform this action.");
-    }
     return this.schoolServices.connectSchoolToUser(
       req.user.userId,
       Number(schoolId),
@@ -398,11 +360,7 @@ export class SchoolController {
   @ApiBadRequestResponse({
     description: 'Validation failed.',
   })
-  getAllSchools(@Req() req: { user: { role: string } }) {
-    const { role } = req.user;
-    if (role !== 'STUDENT' && role !== 'TEACHER') {
-      throw new ConflictException('You do not have access to view all schools');
-    }
+  getAllSchools() {
     return this.schoolServices.getAllSchools();
   }
 
