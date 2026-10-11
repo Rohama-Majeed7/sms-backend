@@ -130,6 +130,7 @@ model Section {
   incharge User? @relation("SectionIncharge", fields: [inchargeId], references: [id])
   students User[] @relation("SectionStudent")
   classId Int
+  studentCapacity Int?
   class Class @relation(fields: [classId], references: [id])
   @@unique([name,classId],name:"section_class")
   timeTable TimeTable[]

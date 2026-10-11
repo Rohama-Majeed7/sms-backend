@@ -74,11 +74,13 @@ export class ClassService {
                         name: s?.name,
                         classId: s?.classId,
                         inchargeId: s?.inchargeId,
+                        studentCapacity: s?.studentCapacity
                     },
                     update: {
                         name: s?.name,
                         classId: s?.classId,
                         inchargeId: s?.inchargeId,
+                        studentCapacity: s?.studentCapacity
                     }
                 })
             }))
@@ -271,10 +273,12 @@ export class ClassService {
                             name: section.name,
                             classId: classExist.id,
                             inchargeId: section.inchargeId ?? null,
+                            studentCapacity: section.studentCapacity ?? null,
                         },
                         update: {
                             name: section?.name,
                             inchargeId: section.inchargeId ?? null,
+                            studentCapacity: section.studentCapacity ?? null,
                         },
                     }),
                 ),

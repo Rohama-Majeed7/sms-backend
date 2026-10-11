@@ -19,7 +19,15 @@ export class SectionService {
         if (student.role !== "STUDENT") {
             throw new Error("User is not a student")
         }
-
+        const section = await this.prisma.section.findUnique({
+            where: { id: sectionId },
+            include: {
+                students: true
+            }
+        })
+        if (section && section.studentCapacity !== null && section?.students?.length >= section.studentCapacity) {
+            throw new ForbiddenException("Section is full")
+        }
         const updatedUser = await this.prisma.user.update({
             where: { id: studentId },
             data: {

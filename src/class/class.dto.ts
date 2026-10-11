@@ -24,6 +24,11 @@ class CreateSectionDto {
     @IsInt()
     @Type(() => Number)
     inchargeId?: number;
+
+    @IsOptional()
+    @IsInt()
+    @Type(() => Number)
+    studentCapacity?: number;
 }
 
 class CreateSubjectDto {
