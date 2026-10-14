@@ -13,7 +13,7 @@ import {
   ResetPasswordDto,
   SetPasswordDto,
   ResendSetPasswordTokenDto,
-} from './dto/auth.dto';
+} from './auth.dto';
 import {
   ApiTags,
   ApiOperation,

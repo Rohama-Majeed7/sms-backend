@@ -151,9 +151,12 @@ model TimeTable {
   day WeekDay
   startTime Int
   endTime Int
+  start String @default("")
+  end String @default("")
   section Section @relation(fields: [sectionId], references: [id])
   subject Subject @relation(fields: [subjectId], references: [id])
   teacher User @relation(fields: [teacherId], references: [id])
+  
   @@index([sectionId,day,startTime])
 }
 model Otp {

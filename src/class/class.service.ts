@@ -442,6 +442,8 @@ export class ClassService {
                 ...entry,
                 startTime,
                 endTime,
+                start: entry.startTime,
+                end: entry.endTime
             };
         });
 
@@ -481,7 +483,7 @@ export class ClassService {
 
             if (!subject) {
                 throw new BadRequestException(
-                    `Subject ${entry.subjectId} does not belong to this class`,
+                    `Subject does not belong to this class`,
                 );
             }
 
@@ -491,7 +493,13 @@ export class ClassService {
 
             if (!teacher) {
                 throw new NotFoundException(
-                    `Teacher/User ${entry.teacherId} not found`,
+                    `Teacher not found`,
+                );
+            }
+
+            if (teacher.role !== 'TEACHER') {
+                throw new BadRequestException(
+                    `User is not a teacher`,
                 );
             }
 
@@ -533,6 +541,8 @@ export class ClassService {
                     teacherId: entry.teacherId,
                     startTime: entry.startTime,
                     endTime: entry.endTime,
+                    start: String(entry.startTime),
+                    end: String(entry.endTime)
                 })),
             });
         });

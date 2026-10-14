@@ -105,6 +105,7 @@ export class TimeTableEntry {
     @IsString()
     @IsNotEmpty()
     endTime: string;
+
 }
 export class UpdateTimeTableDto extends TimeTableEntry {
 

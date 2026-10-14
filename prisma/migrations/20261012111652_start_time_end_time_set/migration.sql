@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "TimeTable" ADD COLUMN     "end" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "start" TEXT NOT NULL DEFAULT '';

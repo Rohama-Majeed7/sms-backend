@@ -22,7 +22,55 @@ export class UsersService {
               name: true,
               email: true,
               isVerified: true,
-              role: true
+              role: true,
+              sectionId: true,
+              sectionStudent: {
+                select: {
+                  name: true,
+                  id: true,
+                  inchargeId: true,
+                  timeTable: {
+                    select: {
+                      id: true,
+                      day: true,
+                      startTime: true,
+                      endTime: true,
+                      teacherId: true,
+                      subjectId: true,
+                      teacher: {
+                        select: {
+                          name: true,
+                          id: true
+                        }
+                      },
+                      subject: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  },
+                  incharge: {
+                    select: {
+                      name: true,
+                      id: true
+                    }
+                  },
+                  class: {
+                    select: {
+                      id: true,
+                      name: true,
+                      subjects: {
+                        select: {
+                          id: true,
+                          name: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -45,7 +93,7 @@ export class UsersService {
   };
   getTeacherProfile = async (userId: number) => {
     try {
-      const teacher = await this.prisma.teacher.findUnique({
+      const teacherProfile = await this.prisma.teacher.findUnique({
         where: { userId },
         select: {
           id: true,
@@ -54,23 +102,118 @@ export class UsersService {
           specialization: true,
           joiningDate: true,
           userId: true,
-          user: {
+
+        }
+      });
+      if (!teacherProfile) {
+        throw new Error('Teacher not found');
+      }
+      const teacher = await this.prisma.user.findUnique({
+        where: {
+          id: userId
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isVerified: true,
+          role: true,
+          sectionIncharge: {
             select: {
-              id: true,
               name: true,
-              email: true,
-              isVerified: true,
-              role: true
+              id: true,
+              inchargeId: true,
+              students: {
+                select: {
+                  name: true,
+                  id: true
+                }
+              },
+              incharge: {
+                select: {
+                  name: true,
+                  id: true
+                }
+              },
+              class: {
+                select: {
+                  id: true,
+                  name: true,
+                  subjects: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              }
             }
           }
         }
-      });
+      })
       if (!teacher) {
-        throw new Error('Teacher not found');
+        throw new Error('Teacher not found')
       }
+
+      const timeTable = await this.prisma.timeTable.findMany({
+        where: {
+          teacherId: Number(teacher.id)
+        },
+        select: {
+          id: true,
+          day: true,
+          startTime: true,
+          endTime: true,
+          teacherId: true,
+          subjectId: true,
+          sectionId: true,
+          section: {
+            select: {
+              name: true,
+              id: true,
+              students: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              class: {
+                select: {
+                  name: true,
+                  id: true,
+                  subjects: {
+                    select: {
+                      id: true,
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          teacher: {
+            select: {
+              name: true,
+              id: true
+            }
+          },
+          subject: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      })
+
+
       return {
         message: 'Teacher profile fetched successfully',
-        data: teacher,
+        data: {
+          ...teacherProfile,
+          ...teacher,
+          timeTable: timeTable
+        },
         success: true,
       };
     } catch (error) {

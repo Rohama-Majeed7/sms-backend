@@ -32,7 +32,9 @@ async function bootstrap() {
     { name: "User - School Connection", description: "School Connection APIs" },
     { name: 'User - Schools', description: "User Schools APIs" },
     { name: 'Admin', description: 'Admin APIs' },
-    { name: 'Admin - School', description: 'Admin School APIs' }
+    { name: 'Admin - School', description: 'Admin School APIs' },
+    { name: 'Admin - Classes', description: 'Admin Classes APIs' },
+    { name: 'Admin - Sections', description: 'Admin Sections APIs' }
   ];
   SwaggerModule.setup('api/docs', app, document);
   app.enableCors({
